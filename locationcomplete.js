@@ -45,13 +45,19 @@
         =================================*/
         
         function loadData() {
-            $.ajax({
-                url : settings.url,
-                success : parseData,
-                error : function() {
-                    console.error( 'Error: Data load failed' )
-                }
-            })
+            // Check to see if localstorage is available and contains the postcode data.
+            if(localStorageExists() && localStorage.getItem("postcodeData")) {
+                parseData(localStorage.getItem("postcodeData"));
+            } else {
+                $.ajax({
+                    url : settings.url,
+                    success : parseData,
+                    error : function() {
+                        console.error( 'Error: Data load failed' )
+                    }
+                });
+            }
+            
         }
 
 
@@ -60,6 +66,11 @@
         ==================================*/
 
         function parseData(data) {
+            // Save data
+            if(localStorageExists()) {
+                localStorage.setItem("postcodeData", data);
+            }
+
             var locations = data.split('\n');
             var i = locations.length;
             var parsed = [];
@@ -143,7 +154,6 @@
             // Search Data
             var i = searchData.length;
 
-            var start = new Date().getTime();
             // Loop through each location
             while(i --) {
                 var match = false;
@@ -188,7 +198,6 @@
             results = results.slice(0, settings.limit);
 
             value = $input.val();
-            console.log('processing took ' + (new Date().getTime() - start) + 'ms');
             drawResults(results);
         }
 
@@ -198,7 +207,6 @@
         ====================================*/
 
         function drawResults(results) {
-            var start = new Date().getTime();
             var $container = $('.'+settings.resultsClass);
             var containerExists = $container.length > 0;
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
@@ -230,7 +238,6 @@
             } else {
                 $container.show();
             }
-            console.log('drawing took ' + (new Date().getTime() - start) + 'ms');        
         }
 
 
@@ -364,6 +371,17 @@
                 }
             }
         }());
+
+        // Test if localstorage is available
+        function localStorageExists() {
+            try {
+                localStorage.setItem('test', 'testing');
+                localStorage.removeItem('test');
+                return true;
+            } catch(e) {
+                return false;
+            }
+        }
         
         // Convert string to title case
         function toTitleCase(str) {
