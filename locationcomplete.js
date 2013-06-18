@@ -16,8 +16,8 @@
             searchAfter     : 2,    // Only search after this amount of letters is typed
             resultsElement  : 'ul', // Container to hold results list
             resultElement   : 'li',  // Container to hold result
-            resultsClass    : 'results-container', // Class of container
-            resultClass     : 'result-item'
+            resultsClass    : 'lc-results-container', // Class of container
+            resultClass     : 'lc-result-item'
         };
 
         // Error will be thrown if these arent defined
@@ -92,7 +92,7 @@
         }
 
         function startSearch(data) {
-            searchInterval = setInterval(search, settings.interval);
+            searchInterval = setInterval(searchLocations, settings.interval);
         }
 
         function stopSearch() {
@@ -104,13 +104,26 @@
         =            SEARCH            =
         ==============================*/
      
-        function search() {
+        function searchLocations() {
             // Only search if input has changed
             if($input.val() === value) return;
             var searchValue = $input.val().toLowerCase();
 
             // Only search if more than min letters is typed
-            if(searchValue.length <= settings.searchAfter) return;
+            if(searchValue.length <= settings.searchAfter) {
+                return;
+            };
+
+            // If there are 3 commas in the search string then it is 
+            // safe to assume that the field has been autofilled,
+            // so there is no need to search
+
+            if(searchValue.split(',').length > 2) {
+                if($('.'+settings.resultClass).length > 0) {
+                    drawResults([]);
+                }
+                return;
+            }
 
             var searchValues = searchValue.split(' ');
             var results = [];
@@ -176,7 +189,7 @@
             var start = new Date().getTime();
             var $container = $('.'+settings.resultsClass);
             var containerExists = $container.length > 0;
-            $container = containerExists ? $container : $('<'+settings.resultsElement+'/>').addClass(settings.resultsClass);
+            $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
             var html = '';
             for ( var i = 0; i < results.length; i ++ ) {
                 var sections = results[i][0].split(',');
@@ -192,10 +205,98 @@
 
             if(!containerExists) {
                 $input.after($container);
+                bindEvents($container);
             }
             console.log('drawing took ' + (new Date().getTime() - start) + 'ms');        
-        } 
+        }
 
+
+
+        /*===================================
+        =            BIND EVENTS            =
+        ===================================*/
+        
+        function bindEvents($elem) {
+            $('.'+settings.resultsClass).on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
+                $('.lc-focused').removeClass('lc-focused');
+                $(this).toggleClass('lc-focused');
+            });
+
+            $('.'+settings.resultsClass).on('click', '.'+settings.resultClass, function(e) {
+                $input.val($(this).text());
+                searchLocations();
+            });
+
+            $input.on('keydown', function(e) {
+                if($(this).val().split(',').length > 2) {
+                    return;
+                }
+
+                switch(e.keyCode) {
+                    case 38 : // Up
+                        focusPrev();
+                    break;
+                    case 40 : // Down
+                        focusNext();
+                    break;
+                    case 13 : // Enter
+                        selectItem();
+                    break;
+
+                    default:
+                        return;
+                }
+                
+                e.preventDefault();
+
+                var $new = $('.lc-focused');
+                if($new.length === 0) return;
+                var current = $new.offset().top;
+                var desired = ($elem.height() / 2) - ($new.height() / 2) + $elem.offset().top - $elem.scrollTop();
+                var delta = current - desired;
+
+                if(delta > 0) {
+                    $elem.scrollTop(delta);
+                } else {
+                    $elem.scrollTop(0);
+                }
+
+            });
+
+        }
+
+
+        function focusPrev() {
+            var $focused = $('.lc-focused');
+            $focused.removeClass('lc-focused');
+            var $prev = $focused.prev();
+
+            if($focused.length === 0 || $prev.length === 0) {
+                $('.'+settings.resultClass).last().addClass('lc-focused');
+            } else {
+                $prev.addClass('lc-focused');
+            }
+        }
+
+        function focusNext() {
+            var $focused = $('.lc-focused');
+            $focused.removeClass('lc-focused');
+            var $next = $focused.next();
+
+            if($focused.length === 0 || $next.length === 0) {
+                $('.'+settings.resultClass).first().addClass('lc-focused');
+            } else {
+                $next.addClass('lc-focused');
+            }
+        }
+
+        function selectItem() {
+            var $focused = $('.lc-focused');
+            $input.val($focused.text());
+            searchLocations();
+
+        }
+        
 
         /*========================================
         =            HELPER FUNCTIONS            =
@@ -223,6 +324,7 @@
             }
         }());
         
+        // Convert string to title case
         function toTitleCase(str) {
             return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
         }

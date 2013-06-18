@@ -3,18 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <title>Location Complete</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 300px;
+            margin: 100px auto;
+        }
+
+        #locationcomplete {
+            width: 100%;
+            display: block;
+            padding: 10px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-size: 1.2em;
+        }
+
+        #locationcomplete:focus {
+            border: 1px solid #333;
+        }
+
+        .lc-results-container {
+            width: 100%;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 0;
+            margin: 0;
+            background: #eee;
+        }
+
+        .lc-result-item {
+            padding: 10px;
+            font-size: 1.2em;
+            list-style: none;
+        }
+
+        .lc-result-item.lc-focused {
+            background: #333;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="margin-top: 50px;">
-        <input type="text" id="locationcomplete">
+    <div class="container">
+        <form action="#">
+            <input type="text" id="locationcomplete" autocomplete="off">
+        </form>
     </div>
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <script src="js/locationcomplete.js"></script>
+    <script src="locationcomplete.js"></script>
     <script>
         $('#locationcomplete').locationComplete({
-            url : 'zipcodes.csv'
+            url : 'postcodes.csv'
         });
+
+
+        // $('#locationcomplete').locationComplete({
+        //     url : 'postcodes.csv',
+        //     limit           : 20,   // Limit results displayed
+        //     interval        : 200,  // Interval to check for changes in the input
+        //     postCodeIndex   : 1,    // Postcode column in csv
+        //     stateIndex      : 2,    // State column in csv
+        //     placeIndex      : 0,    // Place column in csv
+        //     maxHeight       : 300,  // Maximun height of results element
+        //     searchAfter     : 5,    // Only search after this amount of letters is typed
+        //     resultsElement  : 'div', // Container to hold results list
+        //     resultElement   : 'div',  // Container to hold result
+        //     resultsClass    : 'results-container', // Class of container
+        //     resultClass     : 'result-item' // Class for result item
+        // })
     </script>
 </body>
 </html>
