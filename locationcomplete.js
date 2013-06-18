@@ -292,6 +292,9 @@
 
         function selectItem() {
             var $focused = $('.lc-focused');
+            if($focused.length === 0) {
+                $focused = $('.'+settings.resultClass).first();
+            }
             $input.val($focused.text());
             searchLocations();
 
