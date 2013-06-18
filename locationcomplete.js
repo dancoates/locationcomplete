@@ -34,7 +34,9 @@
                     return;
                 }
             }
-            drawResults([]);
+            $input.data('placeholder', $input.attr('placeholder'));
+            $input.attr('placeholder', 'Loading locations...');
+
             loadData();
         }
 
@@ -91,6 +93,8 @@
         function setupSearch(data) {
             $input.on('focus', startSearch);
             $input.on('blur', stopSearch);
+            $input.attr('placeholder', $input.data('placeholder'));
+            drawResults([]);
         }
 
         function startSearch(data) {
