@@ -4,6 +4,7 @@
         var value = $input.val();
         var searchInterval;
         var searchData = null;
+        var keysdown = 0;
 
         // Define defaults
         var defaults = {
@@ -33,6 +34,7 @@
                     return;
                 }
             }
+            drawResults([]);
             loadData();
         }
 
@@ -92,7 +94,6 @@
         }
 
         function startSearch(data) {
-            $('.'+settings.resultsClass).show();
             searchInterval = setInterval(searchLocations, settings.interval);
         }
 
@@ -197,8 +198,10 @@
             var $container = $('.'+settings.resultsClass);
             var containerExists = $container.length > 0;
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
-            console.log(results);
             if(results.length === 0) {
+                if($input.val().length < settings.searchAfter) {
+                    $container.empty();
+                }
                 $container.hide();
                 return;
             }
@@ -243,7 +246,6 @@
             });
 
             $input.on('keydown', function(e) {
-
                 switch(e.keyCode) {
                     case 38 : // Up
                         focusPrev(e, this);
@@ -271,8 +273,9 @@
                 } else {
                     $elem.scrollTop(0);
                 }
-
             });
+
+         
 
         }
 
@@ -317,7 +320,7 @@
             
             var $focused = $('.lc-focused');
 
-            if(elem.value.split(',').length === 3 && elem.value === $focused.text()) {
+            if((elem.value.split(',').length === 3 && elem.value === $focused.text()) || elem.value.length < settings.searchAfter) {
                 return;
             }
 
