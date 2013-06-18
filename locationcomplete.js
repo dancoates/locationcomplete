@@ -238,9 +238,8 @@
                 $(this).toggleClass('lc-focused');
             });
 
-            $('.'+settings.resultsClass).on('click', '.'+settings.resultClass, function(e) {
-                $input.val($(this).text());
-                searchLocations();
+            $('.'+settings.resultsClass).on('mousedown', '.'+settings.resultClass, function(e) {
+                selectItem(e, $input[0]);
             });
 
             $input.on('keydown', function(e) {
