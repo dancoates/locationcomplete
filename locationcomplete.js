@@ -92,10 +92,12 @@
         }
 
         function startSearch(data) {
+            $('.'+settings.resultsClass).show();
             searchInterval = setInterval(searchLocations, settings.interval);
         }
 
         function stopSearch() {
+            $('.'+settings.resultsClass).hide();
             clearInterval(searchInterval);
         }
 
@@ -111,6 +113,10 @@
 
             // Only search if more than min letters is typed
             if(searchValue.length <= settings.searchAfter) {
+                if($('.'+settings.resultClass).length > 0) {
+                    drawResults([]);
+                    value = $input.val();
+                }
                 return;
             };
 
@@ -121,6 +127,7 @@
             if(searchValue.split(',').length > 2) {
                 if($('.'+settings.resultClass).length > 0) {
                     drawResults([]);
+                    value = $input.val();
                 }
                 return;
             }
@@ -190,22 +197,31 @@
             var $container = $('.'+settings.resultsClass);
             var containerExists = $container.length > 0;
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
+            console.log(results);
+            if(results.length === 0) {
+                $container.hide();
+                return;
+            }
+
             var html = '';
             for ( var i = 0; i < results.length; i ++ ) {
                 var sections = results[i][0].split(',');
                 var postcode = sections[0];
                 var place = toTitleCase(sections[1]);
                 var state = sections[2].toUpperCase();
-                html += '<li class="'+settings.resultClass+'">';
+                var focused = i === 0 ? 'lc-focused' : '';
+                html += '<li class="'+settings.resultClass+' '+focused+'">';
                 html += (place+', '+state+', '+postcode);
                 html += '</li>';
             };
 
-            $container.empty().html(html);
+            $container.empty().html(html).scrollTop(0);
 
             if(!containerExists) {
                 $input.after($container);
                 bindEvents($container);
+            } else {
+                $container.show();
             }
             console.log('drawing took ' + (new Date().getTime() - start) + 'ms');        
         }
@@ -228,27 +244,23 @@
             });
 
             $input.on('keydown', function(e) {
-                if($(this).val().split(',').length > 2) {
-                    return;
-                }
 
                 switch(e.keyCode) {
                     case 38 : // Up
-                        focusPrev();
+                        focusPrev(e, this);
                     break;
                     case 40 : // Down
-                        focusNext();
+                        focusNext(e, this);
                     break;
-                    case 13 : // Enter
-                        selectItem();
+                    case 13: // Enter
+                    case 9 : // tab
+                        selectItem(e, this);
                     break;
-
+                    
                     default:
                         return;
                 }
                 
-                e.preventDefault();
-
                 var $new = $('.lc-focused');
                 if($new.length === 0) return;
                 var current = $new.offset().top;
@@ -266,7 +278,13 @@
         }
 
 
-        function focusPrev() {
+        function focusPrev(e, elem) {
+            if(elem.value.length <= settings.searchAfter) {
+                return;
+            }
+
+            e.preventDefault();
+
             var $focused = $('.lc-focused');
             $focused.removeClass('lc-focused');
             var $prev = $focused.prev();
@@ -278,7 +296,13 @@
             }
         }
 
-        function focusNext() {
+        function focusNext(e, elem) {
+            if(elem.value.length <= settings.searchAfter) {
+                return;
+            }
+
+            e.preventDefault();
+
             var $focused = $('.lc-focused');
             $focused.removeClass('lc-focused');
             var $next = $focused.next();
@@ -290,8 +314,16 @@
             }
         }
 
-        function selectItem() {
+        function selectItem(e, elem) {
+            
             var $focused = $('.lc-focused');
+
+            if(elem.value.split(',').length === 3 && elem.value === $focused.text()) {
+                return;
+            }
+
+            e.preventDefault();
+
             if($focused.length === 0) {
                 $focused = $('.'+settings.resultClass).first();
             }

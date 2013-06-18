@@ -13,17 +13,21 @@
             margin: 100px auto;
         }
 
-        #locationcomplete {
+        input {
             width: 100%;
             display: block;
             padding: 10px;
             border: 1px solid #ccc;
             outline: none;
             font-size: 1.2em;
+            margin: 10px 0;
         }
 
-        #locationcomplete:focus {
+        input:focus {
             border: 1px solid #333;
+        }
+        .autocomplete-wrapper {
+            position: relative;
         }
 
         .lc-results-container {
@@ -31,7 +35,11 @@
             font-family: Arial, Helvetica, sans-serif;
             padding: 0;
             margin: 0;
-            background: #eee;
+            background: #fefefe;
+            border: 1px solid #333;
+            margin-top: -1px;
+            position: absolute;
+            top: 100%;
         }
 
         .lc-result-item {
@@ -50,7 +58,13 @@
 <body>
     <div class="container">
         <form action="#">
-            <input type="text" id="locationcomplete" autocomplete="off">
+            <input placeholder="Name" type="text">
+            <div class="autocomplete-wrapper">
+                <input placeholder="Suburb or Postcode" type="text" id="locationcomplete" autocomplete="off">
+            </div>
+            <input placeholder="Phone" type="text">
+
+            <button type="submit">GO</button>
         </form>
     </div>
 
