@@ -1,4 +1,4 @@
-locationcomplete
+Location Complete
 ================
 
-Javascript autocomplete to handle large datasets such as postcode tables.
+jQuery Plugin designed to handle location autocomplete.

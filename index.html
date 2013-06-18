@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Location Complete</title>
+</head>
+<body>
+    <div class="container" style="margin-top: 50px;">
+        <input type="text" id="locationcomplete">
+    </div>
+
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="js/locationcomplete.js"></script>
+    <script>
+        $('#locationcomplete').locationComplete({
+            url : 'zipcodes.csv'
+        });
+    </script>
+</body>
+</html>
