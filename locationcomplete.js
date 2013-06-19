@@ -123,6 +123,7 @@
         ==============================*/
      
         function searchLocations() {
+
             // Only search if input has changed
             if($input.val() === value) return;
             var searchValue = $input.val().toLowerCase();
@@ -157,34 +158,65 @@
             // Loop through each location
             while(i --) {
                 var match = false;
-                var matches = 0;
+                var matchWeight = 0;
                 var k = searchValues.length;
                 // Loop through each search term
                 while(k--) {
                     // Make sure that search term is not empty
                     if(searchValues[k].length > 1) {
-                        var j = searchData[i].tokens.length;
                         // Check if any search term exists in location at all
                         if(searchData[i].value.indexOf(searchValues[k]) !== - 1) {
                             match = true;
                             // If it does then loop through the tokens to see how 
                             // many matches there are and generate a search weight
+                            var tokens = [].concat(searchData[i].tokens);
+                            var j = tokens.length;
+
                             while( j -- ) {
-                                if(searchData[i].tokens[j].indexOf(searchValues[k]) !== -1) {
-                                    matches ++;
-                                    // Add extra weight for exact matches
-                                    if(searchData[i].tokens[j] === searchValues[k]) {
-                                        matches ++;
+                                var strIndex = tokens[j].indexOf(searchValues[k]);
+                                
+                                if(strIndex !== -1) {
+                                    // Count as match and increment
+                                    matchWeight += 2;
+
+                                    // If input string is directly matched in data string, add extra weight
+                                    if(searchData[i].value.indexOf(searchValue) !== -1) {
+                                        matchWeight ++;
                                     }
+
+                                    // If indexs are the same between search and token, increment
+                                    if(j === k) {
+                                        matchWeight ++;
+                                    }
+
+                                    // Give extra weight if search string is near start of token
+                                    matchWeight += (4 / (strIndex + 1));
+
+                                    // Give extra weight based on how close string is to an exact match
+                                    matchWeight += (searchValues[k].length / tokens[j].length) * 2;
+
+                                    // Give one extra weight for exact matches
+                                    if(searchValues[k] === tokens[j]) {
+                                        matchWeight ++;
+                                    }
+
+                                    tokens[j] = "";
+
+                                    // We don't want to match the search term to multiple tokens so stop here if there's a match.
+                                    break;
                                 }
                             }
+                        }
+                    } else {
+                        if(searchValue.length > 1 && searchData[i].value.indexOf(searchValue) !== -1) {
+                            matchWeight += 3
                         }
                     }
                 }
 
                 if(match) {
                     // Base weight on how close to exact string we get
-                    var weight = matches / searchData[i].tokens.length;
+                    var weight = matchWeight / (searchData[i].tokens.length / searchValues.length);
                     results.push([searchData[i].value, weight]);
                 }
             }
@@ -198,6 +230,7 @@
             results = results.slice(0, settings.limit);
 
             value = $input.val();
+
             drawResults(results);
         }
 
