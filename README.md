@@ -9,6 +9,7 @@ This is built to handle large datasets and as a result has some preprocessing re
 - Data must be in csv format (to reduce file-size)
 - All unnecessary columns must be removed
 - Data must use unix line endings
+- Data must consist of three columns (Location Name, State, Postcode)
 
 ## Usage
 
