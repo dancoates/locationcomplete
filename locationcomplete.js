@@ -1,10 +1,11 @@
 (function($, window, undefined) {
-    $.fn.locationComplete = function( options ) {
+    $.fn.locationComplete = function( options, callback ) {
         var $input = this;
         var value = $input.val();
         var searchInterval;
         var searchData = null;
         var keysdown = 0;
+        var clickedOnResults = false;
 
         // Define defaults
         var defaults = {
@@ -18,7 +19,8 @@
             resultsElement  : 'ul', // Container to hold results list
             resultElement   : 'li',  // Container to hold result
             resultsClass    : 'lc-results-container', // Class of container
-            resultClass     : 'lc-result-item'
+            resultClass     : 'lc-result-item',
+            loadingMessage  : 'Loading locations...'
         };
 
         // Error will be thrown if these arent defined
@@ -34,8 +36,9 @@
                     return;
                 }
             }
+            // Basic loading message
             $input.data('placeholder', $input.attr('placeholder'));
-            $input.attr('placeholder', 'Loading locations...');
+            $input.attr('placeholder', settings.loadingMessage);
 
             loadData();
         }
@@ -45,10 +48,11 @@
         =================================*/
         
         function loadData() {
-            // Check to see if localstorage is available and contains the postcode data.
-            if(localStorageExists() && localStorage.getItem("postcodeData")) {
+            // Check to see if localstorage is available and contains the correct postcode data.
+            if(localStorageExists() && localStorage.getItem("postcodeDataURL") === settings.url) {
                 parseData(localStorage.getItem("postcodeData"));
             } else {
+                // Otherwise ajax in the postcode data.
                 $.ajax({
                     url : settings.url,
                     success : parseData,
@@ -66,32 +70,38 @@
         ==================================*/
 
         function parseData(data) {
-            // Save data
+            // Save data & URL
             if(localStorageExists()) {
                 localStorage.setItem("postcodeData", data);
+                localStorage.setItem("postcodeDataURL", settings.url);
             }
 
             var locations = data.split('\n');
             var i = locations.length;
             var parsed = [];
+            // If data doesn't use unix line endings then splitting at \n won't work.
             if(i === 1) {
                 console.error('Error: error parsing csv, check line endings - they should be unix');
                 return;
             }
 
+
             while(i--) {
                 var datum = {};
+                // Save full value for exact string matching
                 datum.value = locations[i];
-
-                var section = locations[i].split(',');
-                datum.tokens = section[settings.placeIndex]
+                // Split CSV into columns
+                var columns = locations[i].split(',');
+                // Create an array of search tokens from the columns
+                datum.tokens = columns[settings.placeIndex]
                                     .split(' ')
                                     .concat([
-                                        section[settings.postCodeIndex],
-                                        section[settings.stateIndex]
+                                        columns[settings.postCodeIndex],
+                                        columns[settings.stateIndex]
                                     ]);
                 parsed.push(datum);
             };
+            // Save to global variable and start search
             searchData = parsed;
             setupSearch();
         }
@@ -102,19 +112,39 @@
         ==========================================*/
 
         function setupSearch(data) {
+            // Bind events so that we search when input is focused
             $input.on('focus', startSearch);
             $input.on('blur', stopSearch);
+
+            // Return placeholder to original value, now thtat everything is loaded
             $input.attr('placeholder', $input.data('placeholder'));
+
+            // If user has already clicked in input before the data was ready, we should search now.
+            if($input.is(":focus")) {
+                startSearch();
+            }
+
+            if(callback) {
+                callback($input);
+            }
+
+            // Start drawing results to bind key events.
             drawResults([]);
         }
 
-        function startSearch(data) {
+        function startSearch() {
+            searchLocations(true);
+            // Because of some keyup problems on mobile devices we are searching on an interval instead.
             searchInterval = setInterval(searchLocations, settings.interval);
         }
 
         function stopSearch() {
-            $('.'+settings.resultsClass).hide();
-            clearInterval(searchInterval);
+            // Don't hide if we've clicked on results.
+            if(!clickedOnResults) {
+                // Hide dropdown and clear interval when we blur out.
+                $('.'+settings.resultsClass).hide();
+                clearInterval(searchInterval);
+            }
         }
 
 
@@ -122,14 +152,15 @@
         =            SEARCH            =
         ==============================*/
      
-        function searchLocations() {
-
+        function searchLocations(initialFocus) {
             // Only search if input has changed
-            if($input.val() === value) return;
+            if($input.val() === value && !initialFocus) return;
+
             var searchValue = $input.val().toLowerCase();
 
             // Only search if more than min letters is typed
             if(searchValue.length <= settings.searchAfter) {
+                // Hide dropdown if less than min letters typed
                 if($('.'+settings.resultClass).length > 0) {
                     drawResults([]);
                     value = $input.val();
@@ -142,6 +173,7 @@
             // so there is no need to search
 
             if(searchValue.split(',').length > 2) {
+                // Hide dropdown
                 if($('.'+settings.resultClass).length > 0) {
                     drawResults([]);
                     value = $input.val();
@@ -149,10 +181,11 @@
                 return;
             }
 
+            // Separate out search term into an array of tokens.
             var searchValues = searchValue.split(' ');
             var results = [];
 
-            // Search Data
+            // SEARCH
             var i = searchData.length;
 
             // Loop through each location
@@ -184,7 +217,7 @@
                                         matchWeight ++;
                                     }
 
-                                    // If indexs are the same between search and token, increment
+                                    // If indexs are the same between search and token, add 1 weight
                                     if(j === k) {
                                         matchWeight ++;
                                     }
@@ -208,6 +241,7 @@
                             }
                         }
                     } else {
+                        // Low complexity search for search terms of only one letter.
                         if(searchValue.length > 1 && searchData[i].value.indexOf(searchValue) !== -1) {
                             matchWeight += 3
                         }
@@ -242,7 +276,10 @@
         function drawResults(results) {
             var $container = $('.'+settings.resultsClass);
             var containerExists = $container.length > 0;
+            // Check if container exists and if so make $container equal to it, if not, create new container.
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
+
+            // Hide container if there are no results, empty it if search term is too short.
             if(results.length === 0) {
                 if($input.val().length < settings.searchAfter) {
                     $container.empty();
@@ -251,6 +288,7 @@
                 return;
             }
 
+            // Loop through results and generate html output.
             var html = '';
             for ( var i = 0; i < results.length; i ++ ) {
                 var sections = results[i][0].split(',');
@@ -258,13 +296,15 @@
                 var place = toTitleCase(sections[1]);
                 var state = sections[2].toUpperCase();
                 var focused = i === 0 ? 'lc-focused' : '';
-                html += '<li class="'+settings.resultClass+' '+focused+'">';
+                html += '<'+ settings.resultElement +' class="'+settings.resultClass+' '+focused+'">';
                 html += (place+', '+state+', '+postcode);
-                html += '</li>';
+                html += '</'+settings.resultElement+'>';
             };
 
+            // Empty container and scroll to top.
             $container.empty().html(html).scrollTop(0);
 
+            // If container doesn't exist, add it to the page.
             if(!containerExists) {
                 $input.after($container);
                 bindEvents($container);
@@ -280,15 +320,37 @@
         ===================================*/
         
         function bindEvents($elem) {
-            $('.'+settings.resultsClass).on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
+
+            var $container = $('.'+settings.resultsClass);
+
+            // Add focused class on hover
+            $container.on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
                 $('.lc-focused').removeClass('lc-focused');
                 $(this).toggleClass('lc-focused');
             });
 
-            $('.'+settings.resultsClass).on('mousedown', '.'+settings.resultClass, function(e) {
+            // Select item on click
+            $container.on('mousedown', '.'+settings.resultClass, function(e) {
                 selectItem(e, $input[0]);
             });
 
+            // This is a fix for an IE8 bug where clicking on the scroll bar of the results
+            // dropdown causes the blur to trigger and the dropdown to close.
+            $container.on('mousedown', function(e) {
+                clickedOnResults = true;
+                return false;
+            });
+            
+            // If focus moves from results container to anywhere else then close container
+            // and return focus to input.
+            $('html').on('mousedown', function(e) {
+                if(!$(e.target).hasClass(settings.resultsClass) && clickedOnResults) {
+                    clickedOnResults = false;
+                    drawResults([]);
+                }
+            });
+
+            // Bind Key Events
             $input.on('keydown', function(e) {
                 switch(e.keyCode) {
                     case 38 : // Up
@@ -308,6 +370,8 @@
                 
                 var $new = $('.lc-focused');
                 if($new.length === 0) return;
+
+                // Make sure that selected item stays in middle of scrolling box.
                 var current = $new.offset().top;
                 var desired = ($elem.height() / 2) - ($new.height() / 2) + $elem.offset().top - $elem.scrollTop();
                 var delta = current - desired;
@@ -319,12 +383,10 @@
                 }
             });
 
-         
-
         }
 
-
         function focusPrev(e, elem) {
+            // Focus previous element
             if(elem.value.length <= settings.searchAfter) {
                 return;
             }
@@ -343,6 +405,7 @@
         }
 
         function focusNext(e, elem) {
+            // Focus next element
             if(elem.value.length <= settings.searchAfter) {
                 return;
             }
@@ -361,7 +424,7 @@
         }
 
         function selectItem(e, elem) {
-            
+            // Select element
             var $focused = $('.lc-focused');
 
             if((elem.value.split(',').length === 3 && elem.value === $focused.text()) || elem.value.length < settings.searchAfter) {
@@ -377,6 +440,46 @@
             searchLocations();
 
         }
+        
+
+        /*================================================================
+        =            Method to validate location against data            =
+        ================================================================*/
+        
+        this.validate = function(string) {
+            // Don't validate if search data isn't loaded - leave that to the backend
+            if(!searchData) {
+                return true;
+            };
+            var value = string || $input.val();
+            var terms = value.toLowerCase().split(',');
+            // There should be three terms in a valid location
+            if(terms.length !== 3) {
+                return false;
+            }
+
+            var place = $.trim(terms[0]);
+            var state = $.trim(terms[1]);
+            var postcode = $.trim(terms[2]);
+
+            var ordered = [];
+            ordered[settings.placeIndex] = place;
+            ordered[settings.stateIndex] = state;
+            ordered[settings.postCodeIndex] = postcode;
+
+            var search = ordered.join(',');
+            var i = searchData.length;
+            var match = false;
+            while(i--) {
+                if(searchData[i].value === search){
+                    match = true;
+                }
+            }
+            return match;
+
+        };
+        
+        
         
 
         /*========================================
