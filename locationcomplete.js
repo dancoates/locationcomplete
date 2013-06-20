@@ -1,10 +1,11 @@
 (function($, window, undefined) {
-    $.fn.locationComplete = function( options ) {
+    $.fn.locationComplete = function( options, callback ) {
         var $input = this;
         var value = $input.val();
         var searchInterval;
         var searchData = null;
         var keysdown = 0;
+        var clickedOnResults = false;
 
         // Define defaults
         var defaults = {
@@ -122,19 +123,28 @@
             if($input.is(":focus")) {
                 startSearch();
             }
+
+            if(callback) {
+                callback($input);
+            }
+
             // Start drawing results to bind key events.
             drawResults([]);
         }
 
-        function startSearch(data) {
+        function startSearch() {
+            searchLocations(true);
             // Because of some keyup problems on mobile devices we are searching on an interval instead.
             searchInterval = setInterval(searchLocations, settings.interval);
         }
 
         function stopSearch() {
-            // Hide dropdown and clear interval when we blur out.
-            $('.'+settings.resultsClass).hide();
-            clearInterval(searchInterval);
+            // Don't hide if we've clicked on results.
+            if(!clickedOnResults) {
+                // Hide dropdown and clear interval when we blur out.
+                $('.'+settings.resultsClass).hide();
+                clearInterval(searchInterval);
+            }
         }
 
 
@@ -142,10 +152,10 @@
         =            SEARCH            =
         ==============================*/
      
-        function searchLocations() {
-
+        function searchLocations(initialFocus) {
             // Only search if input has changed
-            if($input.val() === value) return;
+            if($input.val() === value && !initialFocus) return;
+
             var searchValue = $input.val().toLowerCase();
 
             // Only search if more than min letters is typed
@@ -207,7 +217,7 @@
                                         matchWeight ++;
                                     }
 
-                                    // If indexs are the same between search and token, increment
+                                    // If indexs are the same between search and token, add 1 weight
                                     if(j === k) {
                                         matchWeight ++;
                                     }
@@ -310,15 +320,34 @@
         ===================================*/
         
         function bindEvents($elem) {
+
+            var $container = $('.'+settings.resultsClass);
+
             // Add focused class on hover
-            $('.'+settings.resultsClass).on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
+            $container.on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
                 $('.lc-focused').removeClass('lc-focused');
                 $(this).toggleClass('lc-focused');
             });
 
             // Select item on click
-            $('.'+settings.resultsClass).on('mousedown', '.'+settings.resultClass, function(e) {
+            $container.on('mousedown', '.'+settings.resultClass, function(e) {
                 selectItem(e, $input[0]);
+            });
+
+            // This is a fix for an IE8 bug where clicking on the scroll bar of the results
+            // dropdown causes the blur to trigger and the dropdown to close.
+            $container.on('mousedown', function(e) {
+                clickedOnResults = true;
+                return false;
+            });
+            
+            // If focus moves from results container to anywhere else then close container
+            // and return focus to input.
+            $('html').on('mousedown', function(e) {
+                if(!$(e.target).hasClass(settings.resultsClass) && clickedOnResults) {
+                    clickedOnResults = false;
+                    drawResults([]);
+                }
             });
 
             // Bind Key Events
@@ -354,10 +383,7 @@
                 }
             });
 
-         
-
         }
-
 
         function focusPrev(e, elem) {
             // Focus previous element
@@ -414,6 +440,46 @@
             searchLocations();
 
         }
+        
+
+        /*================================================================
+        =            Method to validate location against data            =
+        ================================================================*/
+        
+        this.validate = function(string) {
+            // Don't validate if search data isn't loaded - leave that to the backend
+            if(!searchData) {
+                return true;
+            };
+            var value = string || $input.val();
+            var terms = value.toLowerCase().split(',');
+            // There should be three terms in a valid location
+            if(terms.length !== 3) {
+                return false;
+            }
+
+            var place = $.trim(terms[0]);
+            var state = $.trim(terms[1]);
+            var postcode = $.trim(terms[2]);
+
+            var ordered = [];
+            ordered[settings.placeIndex] = place;
+            ordered[settings.stateIndex] = state;
+            ordered[settings.postCodeIndex] = postcode;
+
+            var search = ordered.join(',');
+            var i = searchData.length;
+            var match = false;
+            while(i--) {
+                if(searchData[i].value === search){
+                    match = true;
+                }
+            }
+            return match;
+
+        };
+        
+        
         
 
         /*========================================

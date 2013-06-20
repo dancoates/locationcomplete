@@ -72,8 +72,13 @@
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script src="locationcomplete.min.js"></script>
     <script>
-        $('#locationcomplete').locationComplete({
+        var complete = $('#locationcomplete').locationComplete({
             url : 'postcodes.csv'
+        });
+
+        $('form').on('submit', function() {
+            console.log(complete.validate());
+            return false;
         });
     </script>
 </body>
