@@ -20,12 +20,14 @@
             resultElement   : 'li',  // Container to hold result
             resultsClass    : 'lc-results-container', // Class of container
             resultClass     : 'lc-result-item',
-            loadingMessage  : 'Loading locations...'
+            loadingMessage  : 'Loading locations...',
+            appendTo : false
         };
 
         // Error will be thrown if these arent defined
         var required = ['url'];
         var settings = $.extend(defaults, options);
+        var $parent = !settings.appendTo || $input.closest(settings.appendTo);
 
         function init() {
             var i = required.length;
@@ -117,7 +119,7 @@
             $input.on('blur', stopSearch);
 
             // Return placeholder to original value, now thtat everything is loaded
-            $input.attr('placeholder', $input.data('placeholder'));
+            $input.attr('placeholder', $input.data('placeholder') || "");
 
             // If user has already clicked in input before the data was ready, we should search now.
             if($input.is(":focus")) {
@@ -306,7 +308,11 @@
 
             // If container doesn't exist, add it to the page.
             if(!containerExists) {
-                $input.after($container);
+                if(settings.appendTo) {
+                    $parent.append($container);
+                } else {
+                    $input.after($container);
+                }
                 bindEvents($container);
             } else {
                 $container.show();
