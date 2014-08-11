@@ -1,0 +1,19 @@
+{
+  "name": "locationcomplete",
+  "main": "locationcomplete.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/dancoates/locationcomplete",
+  "authors": [
+    "Dan Coates <dan@vi.com.au>"
+  ],
+  "description": "A small library to search through a list of locations (postcodes/zipcodes with relating suburb names) in CSV format and autocomplete as the user types.",
+  "license": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
