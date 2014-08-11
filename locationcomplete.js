@@ -41,6 +41,7 @@
             // Basic loading message
             $input.data('placeholder', $input.attr('placeholder'));
             $input.attr('placeholder', settings.loadingMessage);
+            $input.attr('autocomplete', 'off');
 
             loadData();
         }
