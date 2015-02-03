@@ -281,7 +281,7 @@
         ====================================*/
 
         function drawResults(results) {
-            var $container = $('#lcmplt'+id);
+            var $container = $('#'+id);
             var containerExists = $container.length > 0;
             // Check if container exists and if so make $container equal to it, if not, create new container.
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass).attr('id', id);
