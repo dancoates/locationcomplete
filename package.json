@@ -1,6 +1,6 @@
 {
   "name": "locationcomplete",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A small library to search through a list of locations (postcodes/zipcodes with relating suburb names) in CSV format and autocomplete as the user types.",
   "main": "locationcomplete.js",
   "scripts": {

@@ -448,6 +448,13 @@
                 $focused = $('.'+settings.resultClass).first();
             }
             $input.val($focused.text());
+
+            // Don't trigger on tab press
+            if(e && e.keyCode !== 9) {
+                // Trigger selected event
+                $input.trigger("locationcomplete:select", [$focused.text()]);
+            }
+
             searchLocations();
 
         }
