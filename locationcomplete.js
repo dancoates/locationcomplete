@@ -1,4 +1,6 @@
+
 (function($, window, undefined) {
+    var index = 1;
     $.fn.locationComplete = function( options, callback ) {
         var $input = this;
         var value = $input.val();
@@ -6,6 +8,8 @@
         var searchData = null;
         var keysdown = 0;
         var clickedOnResults = false;
+        var id = "lcmplt" + index;
+        index ++;
 
         // Define defaults
         var defaults = {
@@ -60,7 +64,7 @@
                     url : settings.url,
                     success : parseData,
                     error : function() {
-                        console.error( 'Error: Data load failed' )
+                        console.error( 'Error: Data load failed' );
                     }
                 });
             }
@@ -103,7 +107,7 @@
                                         columns[settings.stateIndex]
                                     ]);
                 parsed.push(datum);
-            };
+            }
             // Save to global variable and start search
             searchData = parsed;
             setupSearch();
@@ -145,7 +149,7 @@
             // Don't hide if we've clicked on results.
             if(!clickedOnResults) {
                 // Hide dropdown and clear interval when we blur out.
-                $('.'+settings.resultsClass).hide();
+                $('#' + id).hide();
                 clearInterval(searchInterval);
             }
         }
@@ -169,7 +173,7 @@
                     value = $input.val();
                 }
                 return;
-            };
+            }
 
             // If there are 3 commas in the search string then it is 
             // safe to assume that the field has been autofilled,
@@ -246,7 +250,7 @@
                     } else {
                         // Low complexity search for search terms of only one letter.
                         if(searchValue.length > 1 && searchData[i].value.indexOf(searchValue) !== -1) {
-                            matchWeight += 3
+                            matchWeight += 3;
                         }
                     }
                 }
@@ -277,10 +281,10 @@
         ====================================*/
 
         function drawResults(results) {
-            var $container = $('.'+settings.resultsClass);
+            var $container = $('#lcmplt'+id);
             var containerExists = $container.length > 0;
             // Check if container exists and if so make $container equal to it, if not, create new container.
-            $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass);
+            $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass).attr('id', id);
 
             // Hide container if there are no results, empty it if search term is too short.
             if(results.length === 0) {
@@ -302,7 +306,7 @@
                 html += '<'+ settings.resultElement +' class="'+settings.resultClass+' '+focused+'">';
                 html += (place+', '+state+', '+postcode);
                 html += '</'+settings.resultElement+'>';
-            };
+            }
 
             // Empty container and scroll to top.
             $container.empty().html(html).scrollTop(0);
@@ -328,7 +332,7 @@
         
         function bindEvents($elem) {
 
-            var $container = $('.'+settings.resultsClass);
+            var $container = $elem;
 
             // Add focused class on hover
             $container.on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
@@ -351,7 +355,7 @@
             // If focus moves from results container to anywhere else then close container
             // and return focus to input.
             $('html').on('mousedown', function(e) {
-                if(!$(e.target).hasClass(settings.resultsClass) && clickedOnResults) {
+                if($(e.target).attr('id') !== "id" && clickedOnResults) {
                     clickedOnResults = false;
                     drawResults([]);
                 }
@@ -444,11 +448,6 @@
                 $focused = $('.'+settings.resultClass).first();
             }
             $input.val($focused.text());
-            
-            // Don't trigger on tab press
-            if(e && e.keyCode !== 9) {
-                $input.trigger("locationcomplete:select", [$focused.text()]);
-            }
             searchLocations();
 
         }
@@ -462,7 +461,7 @@
             // Don't validate if search data isn't loaded - leave that to the backend
             if(!searchData) {
                 return true;
-            };
+            }
             var value = string || $input.val();
             var terms = value.toLowerCase().split(',');
             // There should be three terms in a valid location
@@ -540,4 +539,4 @@
 
         return this;
     };
-})(jQuery, window)
+})(jQuery, window);
