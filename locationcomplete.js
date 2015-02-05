@@ -341,20 +341,20 @@
             });
 
             // Select item on click
-            $container.on('mousedown', '.'+settings.resultClass, function(e) {
+            $container.on('click', '.'+settings.resultClass, function(e) {
                 selectItem(e, $input[0]);
             });
 
             // This is a fix for an IE8 bug where clicking on the scroll bar of the results
             // dropdown causes the blur to trigger and the dropdown to close.
-            $container.on('mousedown', function(e) {
+            $container.on('click', function(e) {
                 clickedOnResults = true;
                 return false;
             });
             
             // If focus moves from results container to anywhere else then close container
             // and return focus to input.
-            $('html').on('mousedown', function(e) {
+            $('html').on('click', function(e) {
                 if($(e.target).attr('id') !== "id" && clickedOnResults) {
                     clickedOnResults = false;
                     drawResults([]);
