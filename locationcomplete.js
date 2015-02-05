@@ -336,12 +336,14 @@
 
             // Add focused class on hover
             $container.on('mouseenter mouseleave', '.'+settings.resultClass, function(e) {
-                $('.lc-focused').removeClass('lc-focused');
+                $parent.find('.lc-focused').removeClass('lc-focused');
                 $(this).toggleClass('lc-focused');
             });
 
             // Select item on click
             $container.on('click', '.'+settings.resultClass, function(e) {
+                $parent.find('.lc-focused').removeClass('lc-focused');
+                $(this).toggleClass('lc-focused');
                 selectItem(e, $input[0]);
             });
 
@@ -355,8 +357,8 @@
             // and return focus to input.
             $('html').on('click', function(e) {
                 var $target = $(e.target);
-                var $parent = $target.closest(settings.appendTo);
-                if($parent.length === 0) {
+                var $nearestparent = $target.closest(settings.appendTo);
+                if($nearestparent.length === 0) {
                     clickedOnResults = false;
                     drawResults([]);
                 }
@@ -381,7 +383,7 @@
                         return;
                 }
                 
-                var $new = $('.lc-focused');
+                var $new = $parent.find('.lc-focused');
                 if($new.length === 0) return;
 
                 // Make sure that selected item stays in middle of scrolling box.
@@ -406,7 +408,7 @@
 
             e.preventDefault();
 
-            var $focused = $('.lc-focused');
+            var $focused = $parent.find('.lc-focused');
             $focused.removeClass('lc-focused');
             var $prev = $focused.prev();
 
@@ -425,7 +427,7 @@
 
             e.preventDefault();
 
-            var $focused = $('.lc-focused');
+            var $focused = $parent.find('.lc-focused');
             $focused.removeClass('lc-focused');
             var $next = $focused.next();
 
@@ -438,7 +440,7 @@
 
         function selectItem(e, elem) {
             // Select element
-            var $focused = $('.lc-focused');
+            var $focused = $parent.find('.lc-focused');
 
             if((elem.value.split(',').length === 3 && elem.value === $focused.text()) || elem.value.length < settings.searchAfter) {
                 return;
