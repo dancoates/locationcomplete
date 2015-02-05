@@ -349,7 +349,6 @@
             // dropdown causes the blur to trigger and the dropdown to close.
             $container.on('mousedown touchstart', function(e) {
                 clickedOnResults = true;
-                return false;
             });
             
             // If focus moves from results container to anywhere else then close container
