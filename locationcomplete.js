@@ -347,7 +347,7 @@
 
             // This is a fix for an IE8 bug where clicking on the scroll bar of the results
             // dropdown causes the blur to trigger and the dropdown to close.
-            $container.on('click', function(e) {
+            $container.on('mousedown touchstart', function(e) {
                 clickedOnResults = true;
                 return false;
             });
@@ -355,11 +355,14 @@
             // If focus moves from results container to anywhere else then close container
             // and return focus to input.
             $('html').on('click', function(e) {
-                if($(e.target).attr('id') !== "id" && clickedOnResults) {
+                var $target = $(e.target);
+                var $parent = $target.closest(settings.appendTo);
+                if($parent.length === 0) {
                     clickedOnResults = false;
                     drawResults([]);
                 }
             });
+
 
             // Bind Key Events
             $input.on('keydown', function(e) {
