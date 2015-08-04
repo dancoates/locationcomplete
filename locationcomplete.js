@@ -31,7 +31,8 @@
         // Error will be thrown if these arent defined
         var required = ['url'];
         var settings = $.extend(defaults, options);
-        var $parent = !settings.appendTo || $input.closest(settings.appendTo);
+        var $parent = settings.appendTo ? $input.closest(settings.appendTo) : $input.parent();
+
 
         function init() {
             var i = required.length;
