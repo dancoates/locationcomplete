@@ -287,13 +287,6 @@
             // Check if container exists and if so make $container equal to it, if not, create new container.
             $container = containerExists ? $container : $('<'+settings.resultsElement+' style="max-height:'+settings.maxHeight+'px; overflow-y: auto;"/>').addClass(settings.resultsClass).attr('id', id);
 
-            // Empty container if there are no results
-            if(results.length === 0) {
-                $container.empty();
-
-                return;
-            }
-
             // Loop through results and generate html output.
             var html = '';
             for ( var i = 0; i < results.length; i ++ ) {
@@ -440,7 +433,6 @@
         function selectItem(e, elem) {
             // Select element
             var $focused = $parent.find('.lc-focused');
-
             if(!$focused || $focused.length === 0) {
                 $input.trigger("locationcomplete:failedsearch", [$input.val()]);
                 return;

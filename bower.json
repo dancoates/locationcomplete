@@ -1,7 +1,7 @@
 {
   "name": "locationcomplete",
   "main": "locationcomplete.js",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "homepage": "https://github.com/dancoates/locationcomplete",
   "authors": [
     "Dan Coates"
