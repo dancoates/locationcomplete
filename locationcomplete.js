@@ -347,7 +347,7 @@
             
             // If focus moves from results container to anywhere else then close container
             // and return focus to input.
-            $('html').on('click', function(e) {
+            $('html').on('click.' + id, function(e) {
                 var $target = $(e.target);
                 var $nearestparent = $target.closest(settings.appendTo);
                 if($nearestparent.length === 0) {
@@ -498,7 +498,25 @@
         };
         
         
-        
+        this.destroy = function() {
+            var $container = $('#'+id);
+
+            // unbind events
+            $input.off('focus');
+            $input.off('blur');
+            $input.off('keydown');
+            $container.off('mouseenter mouseleave');
+            $container.off('click');
+            $container.off('mousedown touchstart');
+            $container.remove();
+            
+            // If focus moves from results container to anywhere else then close container
+            // and return focus to input.
+            $('html').off('click.' + id);
+
+
+            
+        };
 
         /*========================================
         =            HELPER FUNCTIONS            =
