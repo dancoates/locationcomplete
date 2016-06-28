@@ -1,12 +1,12 @@
 
 (function($, window, undefined) {
+    'use strict';
     var index = 1;
     $.fn.locationComplete = function( options, callback ) {
         var $input = this;
         var value = $input.val();
         var searchInterval;
         var searchData = null;
-        var keysdown = 0;
         var clickedOnResults = false;
         var id = "lcmplt" + index;
         index ++;
@@ -16,7 +16,7 @@
             limit           : 10,   // Limit results displayed
             interval        : 100,  // Interval to check for changes in the input
             postCodeIndex   : 0,    // Postcode column in csv
-            stateIndex      : 2,    // State column in csv
+            stateIndex      : 2,   // State column in csv (-1 if not defined)
             placeIndex      : 1,    // Place column in csv
             maxHeight       : 200,  // Maximun height of results element
             searchAfter     : 2,    // Only search after this amount of letters is typed
@@ -25,13 +25,20 @@
             resultsClass    : 'lc-results-container', // Class of container
             resultClass     : 'lc-result-item',
             loadingMessage  : 'Loading locations...',
-            appendTo : false
+            appendTo : false,
+            noBlurClass     : false
         };
 
         // Error will be thrown if these arent defined
         var required = ['url'];
         var settings = $.extend(defaults, options);
         var $parent = settings.appendTo ? $input.closest(settings.appendTo) : $input.parent();
+
+        // Count amount of columns
+        var termsAmount = 0;
+        if(settings.postCodeIndex >= 0) termsAmount ++;
+        if(settings.stateIndex >= 0) termsAmount ++;
+        if(settings.placeIndex >= 0) termsAmount ++;
 
 
         function init() {
@@ -106,7 +113,9 @@
                                     .concat([
                                         columns[settings.postCodeIndex],
                                         columns[settings.stateIndex]
-                                    ]);
+                                    ]).filter(function(token){
+                                        return !!token;
+                                    });
                 parsed.push(datum);
             }
             // Save to global variable and start search
@@ -124,7 +133,7 @@
             $input.on('focus', startSearch);
             $input.on('blur', stopSearch);
 
-            // Return placeholder to original value, now thtat everything is loaded
+            // Return placeholder to original value, now that everything is loaded
             $input.attr('placeholder', $input.data('placeholder') || "");
 
             // If user has already clicked in input before the data was ready, we should search now.
@@ -282,6 +291,7 @@
         ====================================*/
 
         function drawResults(results) {
+
             var $container = $('#'+id);
             var containerExists = $container.length > 0;
             // Check if container exists and if so make $container equal to it, if not, create new container.
@@ -291,12 +301,16 @@
             var html = '';
             for ( var i = 0; i < results.length; i ++ ) {
                 var sections = results[i][0].split(',');
-                var postcode = sections[0];
-                var place = toTitleCase(sections[1]);
-                var state = sections[2].toUpperCase();
+                var postcode = (sections[settings.postCodeIndex] || '');
+                var place = toTitleCase((sections[settings.placeIndex]) || '');
+                var state = (sections[settings.stateIndex] || '').toUpperCase();
                 var focused = i === 0 ? 'lc-focused' : '';
+                var value = [place, state, postcode].filter(function(item){
+                    return !!item;
+                }).join(', ');
+
                 html += '<'+ settings.resultElement +' class="'+settings.resultClass+' '+focused+'">';
-                html += (place+', '+state+', '+postcode);
+                html += value;
                 html += '</'+settings.resultElement+'>';
             }
 
@@ -349,8 +363,11 @@
             // and return focus to input.
             $('html').on('click.' + id, function(e) {
                 var $target = $(e.target);
-                var $nearestparent = $target.closest(settings.appendTo);
-                if($nearestparent.length === 0) {
+                var $nearestparent = $target.closest($parent);
+
+                if(settings.noBlurClass && $target.hasClass(settings.noBlurClass)) {
+                    // Don't hide results
+                } else if($nearestparent.length === 0) {
                     clickedOnResults = false;
                     drawResults([]);
                 }
@@ -438,11 +455,13 @@
                 return;
             }
 
-            if((elem.value.split(',').length === 3 && elem.value === $focused.text()) || elem.value.length < settings.searchAfter) {
+            if(elem.value === $focused.text() || elem.value.length < settings.searchAfter) {
                 return;
             }
 
-            e.preventDefault();
+            if(e) {
+                e.preventDefault();
+            }
 
             if($focused.length === 0) {
                 $focused = $('.'+settings.resultClass).first();
@@ -456,7 +475,7 @@
             }
 
             searchLocations();
-
+            drawResults([]);
         }
         
 
@@ -472,22 +491,40 @@
             var value = string || $input.val();
             var terms = value.toLowerCase().split(',');
             // There should be three terms in a valid location
-            if(terms.length !== 3) {
+            if(terms.length !== termsAmount) {
                 return false;
             }
 
-            var place = $.trim(terms[0]);
-            var state = $.trim(terms[1]);
-            var postcode = $.trim(terms[2]);
+            var placeIndex = settings.placeIndex >= 0 ? 0 : -1;
+            var stateIndex = settings.stateIndex >= 0 ? (
+                    settings.placeIndex >= 0 ? 1 : 0
+                ) : -1;
+            var postCodeIndex = settings.postCodeIndex >= 0 ? (
+                    settings.placeIndex >= 0 ? (
+                        settings.stateIndex >= 0 ? 2 : 1
+                    ) : (
+                        settings.stateIndex >= 0 ? 1 : 0
+                    )
+                ) : -1;
+
+
+            var place = $.trim(terms[placeIndex]);
+            var state = $.trim(terms[stateIndex]);
+            var postcode = $.trim(terms[postCodeIndex]);
 
             var ordered = [];
-            ordered[settings.placeIndex] = place;
-            ordered[settings.stateIndex] = state;
-            ordered[settings.postCodeIndex] = postcode;
+            if(place)
+                ordered[settings.placeIndex] = place;
+            if(state)
+                ordered[settings.stateIndex] = state;
+            if(postcode)
+                ordered[settings.postCodeIndex] = postcode;
+
 
             var search = ordered.join(',');
             var i = searchData.length;
             var match = false;
+
             while(i--) {
                 if(searchData[i].value === search){
                     match = true;
@@ -513,9 +550,10 @@
             // If focus moves from results container to anywhere else then close container
             // and return focus to input.
             $('html').off('click.' + id);
+        };
 
-
-            
+        this.select = function() {
+            selectItem(null, $input[0]);
         };
 
         /*========================================

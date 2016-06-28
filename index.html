@@ -58,25 +58,26 @@
 </head>
 <body>
     <div class="container">
-        <form action="#">
+        <form action="#" id="form">
             <input placeholder="Name" type="text">
             <div class="autocomplete-wrapper">
                 <input placeholder="Suburb or Postcode" type="text" id="locationcomplete" autocomplete="off">
             </div>
             <input placeholder="Phone" type="text">
 
-            <button type="submit">GO</button>
+            <button id="submit" class="lcmpt-no-blur" type="submit">GO</button>
         </form>
     </div>
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <script src="locationcomplete.min.js"></script>
+    <script src="locationcomplete.js"></script>
     <script>
         var complete = $('#locationcomplete').locationComplete({
             url : 'postcodes.csv'
         });
 
         $('form').on('submit', function() {
+            complete.select();
             console.log(complete.validate());
             return false;
         });
